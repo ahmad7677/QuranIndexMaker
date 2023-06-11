@@ -20,7 +20,7 @@ namespace QuranIndexMaker.Models
         /// a word or a phrase
         /// </summary>
         public string SearchTag { get; set; } = string.Empty;
-        public int Remove { get; set; }
+        public int RemoveIt { get; set; }
         public ICollection<SurahAyahLink> SurahAyahLinks { get; set; } = new List<SurahAyahLink>();
     }
     public class SurahAyahLink

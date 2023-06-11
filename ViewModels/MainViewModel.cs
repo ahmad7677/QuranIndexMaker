@@ -23,7 +23,15 @@ namespace QuranIndexMaker.ViewModels
         private RelayCommand findRootsCommand;
         private RelayCommand indexCommand;
         private List<string> indexKeys = new List<string>();
-        private ObservableCollection<SearchResult> searchResults = new ObservableCollection<SearchResult>();
+        public ObservableCollection<SurahAyahLink> SurahAyahLinks {  get => surahAyahLinks; 
+            set
+            {
+                surahAyahLinks = value;
+                CollectionSuraLinks = CollectionViewSource.GetDefaultView(SurahAyahLinks);
+                CollectionSuraLinks.Refresh();
+            }
+        }
+        public ObservableCollection<SearchResult> SearchResults {  get; set; }
         #endregion
         #region PROPS
         public ObservableCollection<Surahlar> Surahs
@@ -35,7 +43,13 @@ namespace QuranIndexMaker.ViewModels
                 CollectionVS = CollectionViewSource.GetDefaultView(Surahs);
             }
         }
-        public ICollectionView CollectionVS { get; set; }
+        public ICollectionView CollectionVS { get => colvs; 
+            set {
+                colvs = value;
+                CollectionVS.Refresh();
+            } 
+        }
+        public ICollectionView CollectionSuraLinks { get; set; }
         public RelayCommand StartCommand
         {
             get => startCommand;
@@ -57,6 +71,8 @@ namespace QuranIndexMaker.ViewModels
         #region METHODS
         public MainViewModel()
         {
+            surahAyahLinks = new ObservableCollection<SurahAyahLink>();
+            searchResults = new ObservableCollection<SearchResult>();
             startCommand = new RelayCommand(StartSearching);
             findRootsCommand = new RelayCommand(FindRoots);
             indexCommand = new RelayCommand(IndexWords);
@@ -99,6 +115,10 @@ namespace QuranIndexMaker.ViewModels
 
         int root = 21;
         string tag = string.Empty;
+        private ObservableCollection<SurahAyahLink> surahAyahLinks;
+        private ObservableCollection<SearchResult> searchResults;
+        private ICollectionView colvs;
+
         private void FindRoots()
         {
 
@@ -114,7 +134,7 @@ namespace QuranIndexMaker.ViewModels
                         {
                             if (searchResults.ElementAt(j).SearchTag.StartsWith(tag))
                             {
-                                searchResults.ElementAt(j).Remove = 1;
+                                searchResults.ElementAt(j).RemoveIt = 1;
                             }
                         }
                     }                    
@@ -179,6 +199,7 @@ namespace QuranIndexMaker.ViewModels
 
                 Surahs = quranDatabase.Suralar.Local.ToObservableCollection();
                 searchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
+                SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
             }
         }
         #endregion
