@@ -30,6 +30,7 @@ namespace QuranIndexMaker.Models
         public int AyahNo { get; set; }
         public int StartPosition { get; set; }
 
-        public int? SearchResultId { get; set; }
+        public int SearchResultId { get; set; }
+        public virtual SearchResult? SearchResult { get; set; }
     }
 }

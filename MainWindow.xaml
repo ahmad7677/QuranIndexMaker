@@ -14,20 +14,23 @@
     <Window.Resources>
         <converters:NameConverter x:Key="mcon"/>
         <CollectionViewSource x:Key="mainCol" Source="{Binding Surahs, UpdateSourceTrigger=PropertyChanged}"/>
+        
         <Style TargetType="Button">
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="5"/>
         </Style>
     </Window.Resources>
     <Grid>
-        <StackPanel Orientation="Vertical">
-            <StackPanel Orientation="Horizontal">
-            <Button Content="Search for unique words" HorizontalAlignment="Left" Command="{Binding StartCommand}" VerticalAlignment="Top"/>
-            <Button Content="Fine root words" HorizontalAlignment="Left" Command="{Binding FindRootsCommand}" VerticalAlignment="Top"/>                
-            <Button Content="Index unique words" HorizontalAlignment="Left" Command="{Binding IndexCommand}" VerticalAlignment="Top"/>                
-            </StackPanel>
-            
-            <DataGrid ItemsSource="{Binding CollectionVS}"
+        <TabPanel>
+            <TabItem Header="All">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" Visibility="Collapsed">
+                        <Button Content="Search for unique words" HorizontalAlignment="Left" Command="{Binding StartCommand}" VerticalAlignment="Top"/>
+                        <Button Content="Fine root words" HorizontalAlignment="Left" Command="{Binding FindRootsCommand}" VerticalAlignment="Top"/>
+                        <Button Content="Index unique words" HorizontalAlignment="Left" Command="{Binding IndexCommand}" VerticalAlignment="Top"/>
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding CollectionVS}"
                       ScrollViewer.CanContentScroll="True"
                       VerticalScrollBarVisibility="Visible"
                       HorizontalScrollBarVisibility="Disabled"
@@ -35,27 +38,34 @@
                       CanUserAddRows="False"
                       Height="389"                      
                       >
-                <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="No" Width="40">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>                                
-                                <TextBlock>
-                                    <TextBlock.Text>
-                                        <MultiBinding Converter="{StaticResource mcon}" ConverterParameter="">
-                                               <Binding Path="SurahNo"/>                                          
-                                               <Binding Path="AyahNo"/>                         
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>                    
-                    <DataGridTextColumn Header="Text" Binding="{Binding SurahText}" Width="550"/>
-                    <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="100"/> 
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="No" Width="40">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource mcon}" ConverterParameter="">
+                                                    <Binding Path="SurahNo"/>
+                                                    <Binding Path="AyahNo"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Text" Binding="{Binding SurahText}" Width="550"/>
+                            <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="100"/>
+
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Index">
+                <DataGrid ItemsSource="{Binding }">
                     
-                </DataGrid.Columns>
-            </DataGrid>
-        </StackPanel>
+                </DataGrid>
+            </TabItem>
+        </TabPanel>
 
     </Grid>
 </Window>

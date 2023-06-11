@@ -18,16 +18,15 @@ namespace QuranIndexMaker.ViewModels
     {
         #region FIELDS
         QuranDatabase quranDatabase;
-        private ObservableCollection<Surahlar>? surahs;
+        private ObservableCollection<Surahlar> surahs;
         private RelayCommand startCommand;
         private RelayCommand findRootsCommand;
         private RelayCommand indexCommand;
         private List<string> indexKeys = new List<string>();
-        private ObservableCollection<SurahAyahLink> surahAyahLinks;
         private ObservableCollection<SearchResult> searchResults = new ObservableCollection<SearchResult>();
         #endregion
         #region PROPS
-        public ObservableCollection<Surahlar>? Surahs
+        public ObservableCollection<Surahlar> Surahs
         {
             get => surahs;
             set
@@ -69,25 +68,33 @@ namespace QuranIndexMaker.ViewModels
         {
             for (int i = 0; i < searchResults.Count; i++)
             {
-                string stag = searchResults.ElementAt(i).SearchTag;
-                if (stag.Length > 2)
+                SearchResult stag = searchResults.ElementAt(i);
+                if (stag.SearchTag.Length > 2)
                 {
                     foreach (var surah in Surahs)
                     {
-                        if (surah.SurahText.Contains(stag))
+                        //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop". "top" in "stop" must be avoided as it is a part of another word
+
+                        if (surah.SurahText.Contains(" " + stag.SearchTag) || //words found within text
+                            surah.SurahText.Contains(stag.SearchTag) && //words found at the start
+                            surah.SurahText.IndexOf(stag.SearchTag) == 0)
                         {
-                            if (searchResults.ElementAt(i).SurahAyahLinks.Count == 0)
+                            if(!stag.SurahAyahLinks.Where(s=>s.AyahNo == surah.AyahNo).Any() && 
+                                !stag.SurahAyahLinks.Where(s => s.SurahNo == surah.SurahNo).Any())
                             {
+                                int position = surah.SurahText.IndexOf(stag.SearchTag);
                                 searchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
-                                {
+                                {                                    
                                     AyahNo = surah.AyahNo,
-                                    SurahNo = surah.SurahNo
+                                    SurahNo = surah.SurahNo,
+                                    StartPosition = position
                                 });
                             }
                         }
                     }
                 }
             }
+            quranDatabase.SaveChanges();
         }
 
         int root = 21;
@@ -138,7 +145,7 @@ namespace QuranIndexMaker.ViewModels
                         if (!indexKeys.Contains(ayahText[j].Value))
                         {
                             indexKeys.Add(ayahText[j].Value);
-                            int position = surahs[i].SurahText.IndexOf(ayahText[j].Value);
+                            
                             searchResults.Add(new SearchResult
                             {
                                 SearchTag = ayahText[j].Value,
