@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 
 namespace QuranIndexMaker.ViewModels
@@ -17,13 +18,57 @@ namespace QuranIndexMaker.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         #region FIELDS
-        QuranDatabase quranDatabase;
+        private QuranDatabase quranDatabase;
         private ObservableCollection<Surahlar> surahs;
         private RelayCommand startCommand;
         private RelayCommand findRootsCommand;
         private RelayCommand indexCommand;
         private List<string> indexKeys = new List<string>();
-        public ObservableCollection<SurahAyahLink> SurahAyahLinks {  get => surahAyahLinks; 
+
+        private string progressMessage;
+        #endregion
+        #region PROPS
+        public int SelectedSurahNumber {
+            get
+            {
+                return selectedSurahNumber;
+            }
+            set
+            {
+                if(selectedSurahNumber != value) 
+                {
+                    selectedSurahNumber = value;
+                    AyahNumbers = (from i in surahs
+                                   where i.SurahNo == selectedSurahNumber
+                                   select i.AyahNo).ToList();
+                }
+            }
+        }
+        public List<int> SurahNumbers 
+        {
+            get { return surahNumbers; } 
+            set 
+            { 
+                surahNumbers = value;
+                OnPropertyChanged();
+            }
+        }
+        public List<int> AyahNumbers 
+        {
+            get
+            {
+                return ayahNumbers;
+            }
+            set 
+            {
+                ayahNumbers = value;
+                OnPropertyChanged();
+
+            }
+        }
+        public ObservableCollection<SurahAyahLink> SurahAyahLinks
+        {
+            get => surahAyahLinks;
             set
             {
                 surahAyahLinks = value;
@@ -31,23 +76,37 @@ namespace QuranIndexMaker.ViewModels
                 CollectionSuraLinks.Refresh();
             }
         }
-        public ObservableCollection<SearchResult> SearchResults {  get; set; }
-        #endregion
-        #region PROPS
+        public ObservableCollection<SearchResult> SearchResults
+        {
+            get { return searchResults; }
+            set
+            {
+                searchResults = value;
+            }
+        }
+        public string ProgressMessage { get => progressMessage; set => SetProperty(ref progressMessage, value); }
         public ObservableCollection<Surahlar> Surahs
         {
             get => surahs;
             set
             {
                 surahs = value;
+                OnPropertyChanged();
                 CollectionVS = CollectionViewSource.GetDefaultView(Surahs);
+
+                //Set sura numbers
+                SurahNumbers = (from i in surahs
+                                select i.SurahNo).Distinct<int>().ToList();                
             }
         }
-        public ICollectionView CollectionVS { get => colvs; 
-            set {
+        public ICollectionView CollectionVS
+        {
+            get => colvs;
+            set
+            {
                 colvs = value;
                 CollectionVS.Refresh();
-            } 
+            }
         }
         public ICollectionView CollectionSuraLinks { get; set; }
         public RelayCommand StartCommand
@@ -77,40 +136,50 @@ namespace QuranIndexMaker.ViewModels
             findRootsCommand = new RelayCommand(FindRoots);
             indexCommand = new RelayCommand(IndexWords);
             quranDatabase = new QuranDatabase();
-            LoadData();
+
+            Task.Factory.StartNew(LoadData);
         }
 
         private void IndexWords()
         {
-            for (int i = 0; i < searchResults.Count; i++)
-            {
-                SearchResult stag = searchResults.ElementAt(i);
-                if (stag.SearchTag.Length > 2)
-                {
-                    foreach (var surah in Surahs)
-                    {
-                        //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop". "top" in "stop" must be avoided as it is a part of another word
+            string message = "This will completely replace the current list";
+            MessageBoxResult result = MessageBox.Show(message, "Are you sure?", MessageBoxButton.OKCancel);
 
-                        if (surah.SurahText.Contains(" " + stag.SearchTag) || //words found within text
-                            surah.SurahText.Contains(stag.SearchTag) && //words found at the start
-                            surah.SurahText.IndexOf(stag.SearchTag) == 0)
+            if (result == MessageBoxResult.OK)
+            {
+                for (int i = 0; i < searchResults.Count; i++)
+                {
+                    SurahAyahLinks.Clear();
+
+                    SearchResult stag = searchResults.ElementAt(i);
+                    if (stag.SearchTag.Length > 2)
+                    {
+                        foreach (var surah in Surahs)
                         {
-                            if(!stag.SurahAyahLinks.Where(s=>s.AyahNo == surah.AyahNo).Any() && 
-                                !stag.SurahAyahLinks.Where(s => s.SurahNo == surah.SurahNo).Any())
+                            //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop". "top" in "stop" must be avoided as it is a part of another word
+                            string currenttext = surah.SurahText.ToLower();
+
+                            if (currenttext.Contains(" " + stag.SearchTag) || //words found within text
+                                currenttext.Contains(stag.SearchTag) && //words found at the start
+                                currenttext.IndexOf(stag.SearchTag) == 0)
                             {
-                                int position = surah.SurahText.IndexOf(stag.SearchTag);
-                                searchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
-                                {                                    
-                                    AyahNo = surah.AyahNo,
-                                    SurahNo = surah.SurahNo,
-                                    StartPosition = position
-                                });
+                                if (!stag.SurahAyahLinks.Where(s => s.AyahNo == surah.AyahNo).Any() &&
+                                    !stag.SurahAyahLinks.Where(s => s.SurahNo == surah.SurahNo).Any())
+                                {
+                                    int position = surah.SurahText.IndexOf(stag.SearchTag);
+                                    searchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
+                                    {
+                                        AyahNo = surah.AyahNo,
+                                        SurahNo = surah.SurahNo,
+                                        StartPosition = position
+                                    });
+                                }
                             }
                         }
                     }
                 }
+                quranDatabase.SaveChanges();
             }
-            quranDatabase.SaveChanges();
         }
 
         int root = 21;
@@ -118,26 +187,29 @@ namespace QuranIndexMaker.ViewModels
         private ObservableCollection<SurahAyahLink> surahAyahLinks;
         private ObservableCollection<SearchResult> searchResults;
         private ICollectionView colvs;
+        private List<int> surahNumbers;
+        private List<int> ayahNumbers;
+        private int selectedSurahNumber;
 
-        private void FindRoots()
+        private async void FindRoots()
         {
-
             for (int i = searchResults.Count - 1; i > 0; i--)
             {
                 tag = searchResults.ElementAt(i).SearchTag;
                 if (tag.Length == root)
                 {
                     //Search the word in searchResults
-                    for (int j = searchResults.Count-1; j > 0; j--)
+                    for (int j = searchResults.Count - 1; j > 0; j--)
                     {
-                        if(i != j)
+                        if (i != j)
                         {
                             if (searchResults.ElementAt(j).SearchTag.StartsWith(tag))
                             {
+                                //mark derivatives for deletion
                                 searchResults.ElementAt(j).RemoveIt = 1;
                             }
                         }
-                    }                    
+                    }
                 }
             }
             if (root > 5)
@@ -147,58 +219,67 @@ namespace QuranIndexMaker.ViewModels
             }
             else
             {
-                
+
             }
-            quranDatabase.SaveChanges();
+            await quranDatabase.SaveChangesAsync();
         }
 
-        private void StartSearching()
+        private async void StartSearching()
         {
-            Regex sozlar = new Regex(@"([А-Яа-яўқғҳЎҚҒҲёЁ/-]+)");
-            if (surahs != null)
-            {
-                for (int i = 0; i < surahs.Count; i++)
-                {
-                    var ayahText = sozlar.Matches(surahs[i].SurahText);
-                    for (int j = 0; j < ayahText.Count; j++)
-                    {
-                        if (!indexKeys.Contains(ayahText[j].Value))
-                        {
-                            indexKeys.Add(ayahText[j].Value);
-                            
-                            searchResults.Add(new SearchResult
-                            {
-                                SearchTag = ayahText[j].Value,
-                                SurahAyahLinks = new List<SurahAyahLink>()
-                            });
+            string message = "This will completely replace the current list";
+            MessageBoxResult result = MessageBox.Show(message, "Are you sure?", MessageBoxButton.OKCancel);
 
-                            /*     
-                             *     Har bir topilgan suzni butun Quron buyicha qidirib, indeksini saqlash kerak
+            if (result == MessageBoxResult.OK)
+            {
+                Application.Current.Dispatcher.Invoke(new Action(() => {
+                    searchResults.Clear();
+                }));                
+
+                await Task.Run(() =>
+                {
+                    Regex sozlar = new Regex(@"([А-Яа-яўқғҳЎҚҒҲёЁ“” /-]+)");
+                    if (surahs != null)
+                    {
+                        for (int i = 0; i < surahs.Count; i++)
+                        {
+                            var ayahText = sozlar.Matches(surahs[i].SurahText);
+                            for (int j = 0; j < ayahText.Count; j++)
+                            {
+                                if (!indexKeys.Contains(ayahText[j].Value))
                                 {
-                                    new SurahAyahLink()
+                                    indexKeys.Add(ayahText[j].Value);
+
+                                    searchResults.Add(new SearchResult
                                     {
-                                        AyahNo = j+1,
-                                        SurahNo = i+1,
-                                        StartPosition = position
-                                    }
-                                }*/
+                                        SearchTag = ayahText[j].Value.ToLower(),
+                                        RemoveIt = 0,
+                                        SurahAyahLinks = new List<SurahAyahLink>()
+                                    });
+                                }
+                            }
                         }
+                        Application.Current.Dispatcher.Invoke(new Action(() => { 
+                            ProgressMessage = "Search result:\n" + searchResults.Count;
+                        }));
                     }
-                }
+                });
+                //await quranDatabase.SaveChangesAsync();
             }
-            quranDatabase.SaveChanges();
         }
 
         private async void LoadData()
         {
-            if (quranDatabase != null && surahs == null)
+            if (quranDatabase == null)
+                quranDatabase = new QuranDatabase();
+
+            if (surahs == null)
             {
                 await quranDatabase.Suralar.LoadAsync();
-                await quranDatabase.SearchResults.LoadAsync();
                 await quranDatabase.SurahAyahLinks.LoadAsync();
+                await quranDatabase.SearchResults.Include(a => a.SurahAyahLinks).LoadAsync();
 
                 Surahs = quranDatabase.Suralar.Local.ToObservableCollection();
-                searchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
+                SearchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
                 SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
             }
         }
@@ -213,6 +294,19 @@ namespace QuranIndexMaker.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
+        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
+        {
+            if (!Equals(field, newValue))
+            {
+                field = newValue;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                return true;
+            }
+
+            return false;
+        }
+
         #endregion
     }
 }

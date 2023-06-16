@@ -13,8 +13,12 @@
     </Window.DataContext>
     <Window.Resources>
         <converters:NameConverter x:Key="mcon"/>
-        <CollectionViewSource x:Key="mainCol" Source="{Binding Surahs, UpdateSourceTrigger=PropertyChanged}"/>
-        
+        <CollectionViewSource x:Key="mainCol" Source="{Binding Surahs, UpdateSourceTrigger=PropertyChanged, IsAsync=True}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="SurahNo"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
         <Style TargetType="Button">
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="5"/>
@@ -23,15 +27,13 @@
     <Grid>
         <TabPanel>
             <TabControl>
-                <TabItem Header="All">
+                <TabItem Header="Surahs">
                     <StackPanel Orientation="Vertical">
-                        <StackPanel Orientation="Horizontal" Visibility="Collapsed">
-                            <Button Content="Search for unique words" HorizontalAlignment="Left" Command="{Binding StartCommand}" VerticalAlignment="Top"/>
-                            <Button Content="Fine root words" HorizontalAlignment="Left" Command="{Binding FindRootsCommand}" VerticalAlignment="Top"/>
-                            <Button Content="Index unique words" HorizontalAlignment="Left" Command="{Binding IndexCommand}" VerticalAlignment="Top"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox Width="100" Margin="2" ItemsSource="{Binding SurahNumbers, UpdateSourceTrigger=PropertyChanged}" SelectedValue="{Binding SelectedSurahNumber, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="."/>
+                            <ComboBox Width="100" Margin="2" ItemsSource="{Binding AyahNumbers, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
-
-                        <DataGrid ItemsSource="{Binding CollectionVS}"
+                        <DataGrid ItemsSource="{Binding Source={StaticResource mainCol}, UpdateSourceTrigger=PropertyChanged}"
                       ScrollViewer.CanContentScroll="True"
                       VerticalScrollBarVisibility="Visible"
                       HorizontalScrollBarVisibility="Disabled"
@@ -61,17 +63,33 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Index" VerticalAlignment="Stretch">
-                    <DataGrid ItemsSource="{Binding CollectionSuraLinks}" VerticalAlignment="Stretch"
+                <TabItem Header="Edit Index" VerticalAlignment="Stretch">
+                    <DataGrid ItemsSource="{Binding CollectionSuraLinks, IsAsync=True}" VerticalAlignment="Stretch"
                               AutoGenerateColumns="False"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Sura No" Binding="{Binding SurahNo}"/>
                             <DataGridTextColumn Header="Ayat No" Binding="{Binding AyahNo}"/>
                             <DataGridTextColumn Header="Position" Binding="{Binding StartPosition}"/>
-                            <DataGridTextColumn Header="Word" Binding="{Binding SearchResult.SearchTag}"/>                            
+                            <DataGridTextColumn Header="Word" Binding="{Binding SearchResult.SearchTag}"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                </TabItem>
+                <TabItem Header="Generate Index" VerticalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal">
+                        <Border BorderBrush="Black" BorderThickness=".5" Height="400" Width="200" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Vertical">
+                                <Button Content="1. Search for unique words" HorizontalAlignment="Stretch" Command="{Binding StartCommand}" VerticalAlignment="Top"/>
+                                <Button Content="2. Fine root words" HorizontalAlignment="Stretch" Command="{Binding FindRootsCommand}" VerticalAlignment="Top"/>
+                                <Button Content="3. Index unique words" HorizontalAlignment="Stretch" Command="{Binding IndexCommand}" VerticalAlignment="Top"/>
+                            </StackPanel>
+                        </Border>
+                        <Border BorderBrush="Black" BorderThickness=".5" Height="400" Width="200" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="{Binding ProgressMessage, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </TabItem>
             </TabControl>
         </TabPanel>

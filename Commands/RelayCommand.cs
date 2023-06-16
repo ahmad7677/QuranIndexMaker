@@ -16,16 +16,9 @@ namespace QuranIndexMaker.Commands
         private Action action;
         public event EventHandler? CanExecuteChanged;
 
-        public bool CanExecute(object? parameter)
+        public bool CanExecute(object parameter)
         {
-            if (parameter == null )
-            {
-                return true;
-            }
-            else
-            {
-                return true;
-            }
+            return true;
         }
 
         public void Execute(object? parameter)

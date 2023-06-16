@@ -24,5 +24,10 @@ namespace QuranIndexMaker
         {
             InitializeComponent();
         }
+
+        private void CommandBinding_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+
+        }
     }
 }
