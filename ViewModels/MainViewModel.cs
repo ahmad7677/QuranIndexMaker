@@ -20,6 +20,7 @@ namespace QuranIndexMaker.ViewModels
         #region FIELDS
         private QuranDatabase quranDatabase;
         private ObservableCollection<Surahlar> surahs;
+        private List<Surahlar> surahForDetails;
         private RelayCommand startCommand;
         private RelayCommand findRootsCommand;
         private RelayCommand indexCommand;
@@ -50,10 +51,10 @@ namespace QuranIndexMaker.ViewModels
                 {
                     selectedSurahNumber = value;
                     SelectedAyahNumber = 0;
-                    /*Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
+                    Ayats = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
                     AyahNumbers = (from i in surahs
                                    where i.SurahNo == selectedSurahNumber
-                                   select i.AyahNo).ToList();*/
+                                   select i.AyahNo).ToList();
 
                 }
             }
@@ -69,11 +70,11 @@ namespace QuranIndexMaker.ViewModels
                 selectedAyahNumber = value;
                 if (selectedAyahNumber == 0)
                 {
-                    Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
+                    Ayats = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
                 }
                 else
                 {
-                    Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber && a.AyahNo == selectedAyahNumber).ToList());
+                    Ayats = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber && a.AyahNo == selectedAyahNumber).ToList());
                 }
             }
         }
@@ -115,17 +116,18 @@ namespace QuranIndexMaker.ViewModels
             set
             {
                 searchResults = value;
+                OnPropertyChanged();
             }
         }
         public string ProgressMessage { get => progressMessage; set => SetProperty(ref progressMessage, value); }
-        public ObservableCollection<Surahlar> Surahs
+        public ObservableCollection<Surahlar> Ayats
         {
             get => surahs;
             set
             {
                 surahs = value;
                 OnPropertyChanged();
-                CollectionVS = CollectionViewSource.GetDefaultView(Surahs);
+                //CollectionVS = CollectionViewSource.GetDefaultView(Surahs);
 
                 if (surahNumbers == null || surahNumbers.Count == 0)
                 {
@@ -133,6 +135,14 @@ namespace QuranIndexMaker.ViewModels
                     SurahNumbers = (from i in surahs
                                     select i.SurahNo).Distinct<int>().ToList();
                 }
+            }
+        }
+        public List<Surahlar> AyatInDetails
+        {
+            get => surahForDetails;
+            set
+            {
+                surahForDetails = value;
             }
         }
         public ICollectionView CollectionVS
@@ -154,7 +164,7 @@ namespace QuranIndexMaker.ViewModels
                 OnPropertyChanged();
                 if (surahAyahLink != null)
                 {
-                    SelectedAyahText = surahs.Where(a=>a.SurahNo == surahAyahLink.SurahNo && a.AyahNo == surahAyahLink.AyahNo).First();
+                    SelectedAyahText = surahForDetails.Where(a=>a.SurahNo == surahAyahLink.SurahNo && a.AyahNo == surahAyahLink.AyahNo).First();
                 }
             }
         }
@@ -213,7 +223,7 @@ namespace QuranIndexMaker.ViewModels
                     SearchResult stag = searchResults.ElementAt(i);
                     if (stag.SearchTag.Length > 2)
                     {
-                        foreach (var surah in Surahs)
+                        foreach (var surah in Ayats)
                         {
                             //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop". "top" in "stop" must be avoided as it is a part of another word
                             string currenttext = surah.SurahText.ToLower();
@@ -332,7 +342,8 @@ namespace QuranIndexMaker.ViewModels
                 await quranDatabase.SurahAyahLinks.LoadAsync();
                 await quranDatabase.SearchResults.Include(a => a.SurahAyahLinks).LoadAsync();
 
-                Surahs = quranDatabase.Suralar.Local.ToObservableCollection();
+                Ayats = quranDatabase.Suralar.Local.ToObservableCollection();
+                AyatInDetails = quranDatabase.Suralar.Local.ToList();
                 SearchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
                 SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
             }

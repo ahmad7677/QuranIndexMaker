@@ -27,11 +27,9 @@
         <CollectionViewSource x:Key="searchtags" Source="{Binding SearchResults, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
         <CollectionViewSource x:Key="references" Source="{Binding SurahAyahLinks, Source={StaticResource searchtags}, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
 
-        <CollectionViewSource x:Key="mainCol" Source="{Binding Surahs, UpdateSourceTrigger=PropertyChanged, IsAsync=True}">
-            <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="SurahNo"/>
-            </CollectionViewSource.GroupDescriptions>
-        </CollectionViewSource>
+        <CollectionViewSource x:Key="mainCol" Source="{Binding Ayats, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+        <CollectionViewSource x:Key="detailCol" Source="{Binding SurahForDetails, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+
 
         <CompositeCollection x:Key="comboAyahNo">
             <CollectionContainer Collection="{Binding Source={StaticResource all}, UpdateSourceTrigger=PropertyChanged}"/>
@@ -64,7 +62,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
-                      Height="389"                      
+                      Height="355"                      
                       >
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="No" Width="40">
@@ -87,17 +85,17 @@
                 </TabItem>
                 <!--#endregion-->
 
-                <!--#region TAB TWO -->
+                <!--#region TAB TWO Edit Index-->
                 <TabItem Header="Edit Index" VerticalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal">
-                        <DataGrid ItemsSource="{Binding Source={StaticResource searchtags}, IsAsync=True}"
+                        <DataGrid ItemsSource="{Binding Source={StaticResource searchtags}, UpdateSourceTrigger=PropertyChanged}"
                                   AutoGenerateColumns="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True">                            
                             <DataGrid.Columns>                                
                                 <DataGridTextColumn Header="Index" Binding="{Binding SearchTag}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <DataGrid 
-                            ItemsSource="{Binding Source={StaticResource references}, IsAsync=True}"
+                            ItemsSource="{Binding Source={StaticResource references}}"
                             SelectedItem="{Binding SurahAyahLink, UpdateSourceTrigger=PropertyChanged}"
                             VerticalAlignment="Stretch"
                               AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
@@ -116,14 +114,14 @@
 
                 <TabItem Header="Generate Index" VerticalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal">
-                        <Border BorderBrush="Black" BorderThickness=".5" Height="400" Width="200" HorizontalAlignment="Left">
+                        <Border BorderBrush="Black" BorderThickness=".5" Height="380" Width="200" HorizontalAlignment="Left">
                             <StackPanel Orientation="Vertical">
                                 <Button Content="1. Search for unique words" HorizontalAlignment="Stretch" Command="{Binding StartCommand}" VerticalAlignment="Top"/>
                                 <Button Content="2. Fine root words" HorizontalAlignment="Stretch" Command="{Binding FindRootsCommand}" VerticalAlignment="Top"/>
                                 <Button Content="3. Index unique words" HorizontalAlignment="Stretch" Command="{Binding IndexCommand}" VerticalAlignment="Top"/>
                             </StackPanel>
                         </Border>
-                        <Border BorderBrush="Black" BorderThickness=".5" Height="400" Width="200" HorizontalAlignment="Right">
+                        <Border BorderBrush="Black" BorderThickness=".5" Height="380" Width="200" HorizontalAlignment="Right">
                             <StackPanel Orientation="Vertical">
                                 <TextBlock Text="{Binding ProgressMessage, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
