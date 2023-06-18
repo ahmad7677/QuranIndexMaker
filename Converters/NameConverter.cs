@@ -34,4 +34,21 @@ namespace QuranIndexMaker.Converters
             return splitValues;
         }
     }
+
+    public class StringToIntConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            int retval = -1;
+            
+            _ = int.TryParse(value.ToString(), out retval);            
+            
+            return retval;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value;
+        }
+    }
 }

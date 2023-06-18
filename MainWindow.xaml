@@ -12,26 +12,51 @@
         <viewmodel:MainViewModel/>
     </Window.DataContext>
     <Window.Resources>
+
+        <!--#region CONVERTERS -->
         <converters:NameConverter x:Key="mcon"/>
+        <converters:StringToIntConverter x:Key="allcon"/>
+
+        <!--#endregion-->
+
+        <!--#region COLLECTIONS -->
+
+        <CollectionViewSource x:Key="all" Source="{Binding AllItems, UpdateSourceTrigger=PropertyChanged, Mode=OneTime}"/>
+        <CollectionViewSource x:Key="ayats" Source="{Binding AyahNumbers, UpdateSourceTrigger=PropertyChanged}"/>
+        
+        <CollectionViewSource x:Key="searchtags" Source="{Binding SearchResults, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+        <CollectionViewSource x:Key="references" Source="{Binding SurahAyahLinks, Source={StaticResource searchtags}, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+
         <CollectionViewSource x:Key="mainCol" Source="{Binding Surahs, UpdateSourceTrigger=PropertyChanged, IsAsync=True}">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="SurahNo"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
 
+        <CompositeCollection x:Key="comboAyahNo">
+            <CollectionContainer Collection="{Binding Source={StaticResource all}, UpdateSourceTrigger=PropertyChanged}"/>
+            <CollectionContainer Collection="{Binding Source={StaticResource ayats}, UpdateSourceTrigger=PropertyChanged}"/>
+        </CompositeCollection>
+        <!--#endregion-->
+
+        <!--#region STYLES -->
         <Style TargetType="Button">
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="5"/>
         </Style>
+        <!--#endregion-->
+
     </Window.Resources>
     <Grid>
         <TabPanel>
             <TabControl>
+
+                <!--#region TAB 1 -->
                 <TabItem Header="Surahs">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <ComboBox Width="100" Margin="2" ItemsSource="{Binding SurahNumbers, UpdateSourceTrigger=PropertyChanged}" SelectedValue="{Binding SelectedSurahNumber, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="."/>
-                            <ComboBox Width="100" Margin="2" ItemsSource="{Binding AyahNumbers, UpdateSourceTrigger=PropertyChanged}"/>
+                            <ComboBox Width="100" Margin="2" ItemsSource="{Binding Source={StaticResource comboAyahNo}, UpdateSourceTrigger=PropertyChanged}" SelectedIndex="{Binding SelectedAyahNumber, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource allcon}}"/>
                         </StackPanel>
                         <DataGrid ItemsSource="{Binding Source={StaticResource mainCol}, UpdateSourceTrigger=PropertyChanged}"
                       ScrollViewer.CanContentScroll="True"
@@ -47,10 +72,7 @@
                                         <DataTemplate>
                                             <TextBlock>
                                                 <TextBlock.Text>
-                                                    <MultiBinding Converter="{StaticResource mcon}" ConverterParameter="">
-                                                        <Binding Path="SurahNo"/>
-                                                        <Binding Path="AyahNo"/>
-                                                    </MultiBinding>
+                                                    <Binding Path="AyahNo"/>
                                                 </TextBlock.Text>
                                             </TextBlock>
                                         </DataTemplate>
@@ -63,18 +85,35 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
+                <!--#endregion-->
+
+                <!--#region TAB TWO -->
                 <TabItem Header="Edit Index" VerticalAlignment="Stretch">
-                    <DataGrid ItemsSource="{Binding CollectionSuraLinks, IsAsync=True}" VerticalAlignment="Stretch"
-                              AutoGenerateColumns="False"
+                    <StackPanel Orientation="Horizontal">
+                        <DataGrid ItemsSource="{Binding Source={StaticResource searchtags}, IsAsync=True}"
+                                  AutoGenerateColumns="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True">                            
+                            <DataGrid.Columns>                                
+                                <DataGridTextColumn Header="Index" Binding="{Binding SearchTag}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid 
+                            ItemsSource="{Binding Source={StaticResource references}, IsAsync=True}"
+                            SelectedItem="{Binding SurahAyahLink, UpdateSourceTrigger=PropertyChanged}"
+                            VerticalAlignment="Stretch"
+                              AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                               >
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Sura No" Binding="{Binding SurahNo}"/>
-                            <DataGridTextColumn Header="Ayat No" Binding="{Binding AyahNo}"/>
-                            <DataGridTextColumn Header="Position" Binding="{Binding StartPosition}"/>
-                            <DataGridTextColumn Header="Word" Binding="{Binding SearchResult.SearchTag}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Word" Binding="{Binding SearchResult.SearchTag}"/>
+                                <DataGridTextColumn Header="Sura No" Binding="{Binding SurahNo}"/>
+                                <DataGridTextColumn Header="Ayat No" Binding="{Binding AyahNo}"/>
+                                <DataGridTextColumn Header="Position" Binding="{Binding StartPosition}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBox Text="{Binding SelectedAyahText.SurahText, UpdateSourceTrigger=LostFocus}" Width="400" Margin="10" TextWrapping="Wrap"/>
+                    </StackPanel>
                 </TabItem>
+                <!--#endregion-->
+
                 <TabItem Header="Generate Index" VerticalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal">
                         <Border BorderBrush="Black" BorderThickness=".5" Height="400" Width="200" HorizontalAlignment="Left">

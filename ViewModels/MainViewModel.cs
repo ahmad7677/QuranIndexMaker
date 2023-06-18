@@ -24,46 +24,79 @@ namespace QuranIndexMaker.ViewModels
         private RelayCommand findRootsCommand;
         private RelayCommand indexCommand;
         private List<string> indexKeys = new List<string>();
-
+        int root = 21;
+        string tag = string.Empty;
+        private ObservableCollection<SurahAyahLink> surahAyahLinks;
+        private ObservableCollection<SearchResult> searchResults;
+        private ICollectionView colvs;
+        private List<int> surahNumbers;
+        private List<int> ayahNumbers;
+        private int selectedSurahNumber;
+        private int selectedAyahNumber;
         private string progressMessage;
+        private Surahlar selectedAyahText;
+        private SurahAyahLink surahAyahLink;
         #endregion
         #region PROPS
-        public int SelectedSurahNumber {
+        public int SelectedSurahNumber
+        {
             get
             {
                 return selectedSurahNumber;
             }
             set
             {
-                if(selectedSurahNumber != value) 
+                if (selectedSurahNumber != value)
                 {
                     selectedSurahNumber = value;
+                    SelectedAyahNumber = 0;
+                    /*Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
                     AyahNumbers = (from i in surahs
                                    where i.SurahNo == selectedSurahNumber
-                                   select i.AyahNo).ToList();
+                                   select i.AyahNo).ToList();*/
+
                 }
             }
         }
-        public List<int> SurahNumbers 
+        public int SelectedAyahNumber
         {
-            get { return surahNumbers; } 
-            set 
-            { 
+            get
+            {
+                return selectedAyahNumber;
+            }
+            set
+            {
+                selectedAyahNumber = value;
+                if (selectedAyahNumber == 0)
+                {
+                    Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber).ToList());
+                }
+                else
+                {
+                    Surahs = new ObservableCollection<Surahlar>(quranDatabase.Suralar.Local.Where(a => a.SurahNo == selectedSurahNumber && a.AyahNo == selectedAyahNumber).ToList());
+                }
+            }
+        }
+        public List<int> SurahNumbers
+        {
+            get { return surahNumbers; }
+            set
+            {
                 surahNumbers = value;
                 OnPropertyChanged();
             }
         }
-        public List<int> AyahNumbers 
+        public List<string> AllItems { get; set; } = new List<string>();
+        public List<int> AyahNumbers
         {
             get
             {
                 return ayahNumbers;
             }
-            set 
+            set
             {
                 ayahNumbers = value;
                 OnPropertyChanged();
-
             }
         }
         public ObservableCollection<SurahAyahLink> SurahAyahLinks
@@ -94,9 +127,12 @@ namespace QuranIndexMaker.ViewModels
                 OnPropertyChanged();
                 CollectionVS = CollectionViewSource.GetDefaultView(Surahs);
 
-                //Set sura numbers
-                SurahNumbers = (from i in surahs
-                                select i.SurahNo).Distinct<int>().ToList();                
+                if (surahNumbers == null || surahNumbers.Count == 0)
+                {
+                    //Set sura numbers once
+                    SurahNumbers = (from i in surahs
+                                    select i.SurahNo).Distinct<int>().ToList();
+                }
             }
         }
         public ICollectionView CollectionVS
@@ -109,6 +145,30 @@ namespace QuranIndexMaker.ViewModels
             }
         }
         public ICollectionView CollectionSuraLinks { get; set; }
+        public SurahAyahLink SurahAyahLink
+        {
+            get => surahAyahLink;
+            set
+            {
+                surahAyahLink = value;
+                OnPropertyChanged();
+                if (surahAyahLink != null)
+                {
+                    SelectedAyahText = surahs.Where(a=>a.SurahNo == surahAyahLink.SurahNo && a.AyahNo == surahAyahLink.AyahNo).First();
+                }
+            }
+        }
+        public Surahlar SelectedAyahText { 
+            get => selectedAyahText;
+            set
+            {
+                selectedAyahText = value;
+                OnPropertyChanged();
+            }
+        }
+        #endregion
+
+        #region COMMANDS
         public RelayCommand StartCommand
         {
             get => startCommand;
@@ -124,7 +184,6 @@ namespace QuranIndexMaker.ViewModels
             get => indexCommand;
             set => indexCommand = value;
         }
-
         #endregion
 
         #region METHODS
@@ -136,7 +195,7 @@ namespace QuranIndexMaker.ViewModels
             findRootsCommand = new RelayCommand(FindRoots);
             indexCommand = new RelayCommand(IndexWords);
             quranDatabase = new QuranDatabase();
-
+            AllItems.Add("All");
             Task.Factory.StartNew(LoadData);
         }
 
@@ -182,14 +241,7 @@ namespace QuranIndexMaker.ViewModels
             }
         }
 
-        int root = 21;
-        string tag = string.Empty;
-        private ObservableCollection<SurahAyahLink> surahAyahLinks;
-        private ObservableCollection<SearchResult> searchResults;
-        private ICollectionView colvs;
-        private List<int> surahNumbers;
-        private List<int> ayahNumbers;
-        private int selectedSurahNumber;
+        
 
         private async void FindRoots()
         {
@@ -231,9 +283,10 @@ namespace QuranIndexMaker.ViewModels
 
             if (result == MessageBoxResult.OK)
             {
-                Application.Current.Dispatcher.Invoke(new Action(() => {
+                Application.Current.Dispatcher.Invoke(new Action(() =>
+                {
                     searchResults.Clear();
-                }));                
+                }));
 
                 await Task.Run(() =>
                 {
@@ -258,7 +311,8 @@ namespace QuranIndexMaker.ViewModels
                                 }
                             }
                         }
-                        Application.Current.Dispatcher.Invoke(new Action(() => { 
+                        Application.Current.Dispatcher.Invoke(new Action(() =>
+                        {
                             ProgressMessage = "Search result:\n" + searchResults.Count;
                         }));
                     }
@@ -284,7 +338,6 @@ namespace QuranIndexMaker.ViewModels
             }
         }
         #endregion
-
 
         #region PROPERTYCHANGED
         public event PropertyChangedEventHandler? PropertyChanged;
