@@ -9,7 +9,8 @@ namespace QuranIndexMaker.Models
 {
     public class QuranDatabase : DbContext
     {
-        public DbSet<Surahlar> Suralar { get; set; }
+        //public DbSet<Quran> Suralar { get; set; }
+        public DbSet<Quran> quran { get; set; }
         public DbSet<SurahAyahLink> SurahAyahLinks { get; set; }
         public DbSet<SearchResult> SearchResults { get; set; }
 
@@ -20,6 +21,6 @@ namespace QuranIndexMaker.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
             optionsBuilder.UseSqlite(
-           @"Data Source=quranky2.db");
+           @"Data Source=quran_dynamic.db");
     }
 }

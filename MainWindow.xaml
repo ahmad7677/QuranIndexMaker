@@ -55,29 +55,31 @@
                         <StackPanel Orientation="Horizontal">
                             <ComboBox Width="100" Margin="2" ItemsSource="{Binding SurahNumbers, UpdateSourceTrigger=PropertyChanged}" SelectedValue="{Binding SelectedSurahNumber, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="."/>
                             <ComboBox Width="100" Margin="2" ItemsSource="{Binding Source={StaticResource comboAyahNo}, UpdateSourceTrigger=PropertyChanged}" SelectedIndex="{Binding SelectedAyahNumber, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource allcon}}"/>
+                            <ComboBox Width="100" Margin="2" ItemsSource="{Binding LanguageList, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValue="{Binding SelectedLanguage, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="."/>
                         </StackPanel>
-                        <DataGrid ItemsSource="{Binding Source={StaticResource mainCol}, UpdateSourceTrigger=PropertyChanged}"
+                        <DataGrid ItemsSource="{Binding Source={StaticResource mainCol}, UpdateSourceTrigger=PropertyChanged}"                                 
                       ScrollViewer.CanContentScroll="True"
                       VerticalScrollBarVisibility="Visible"
                       HorizontalScrollBarVisibility="Disabled"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
-                      Height="355"                      
-                      >
+                      Height="355"
+                                  BorderThickness="0.1"
+                      >                            
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="No" Width="40">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock>
                                                 <TextBlock.Text>
-                                                    <Binding Path="AyahNo"/>
+                                                    <Binding Path="VerseID"/>
                                                 </TextBlock.Text>
                                             </TextBlock>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Text" Binding="{Binding SurahText}" Width="550"/>
-                                <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="100"/>
+                                <DataGridTextColumn Header="Text" Binding="{Binding AyahText}" Width="550"/>
 
                             </DataGrid.Columns>
                         </DataGrid>
