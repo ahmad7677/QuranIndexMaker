@@ -46,6 +46,10 @@
 
     </Window.Resources>
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width=".8*"/>
+            <ColumnDefinition Width=".2*"/>
+        </Grid.ColumnDefinitions>
         <TabPanel>
             <TabControl>
 
@@ -97,7 +101,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         <DataGrid 
-                            ItemsSource="{Binding Source={StaticResource references}}"
+                            ItemsSource="{Binding Source={StaticResource references}, IsAsync=True}"
                             SelectedItem="{Binding SurahAyahLink, UpdateSourceTrigger=PropertyChanged}"
                             VerticalAlignment="Stretch"
                               AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
@@ -132,6 +136,14 @@
                 </TabItem>
             </TabControl>
         </TabPanel>
+
+        <Border Grid.Column="1">
+            <StackPanel Orientation="Vertical">
+                <Button Content="Save"
+                        Command="{Binding SaveCommand}"
+                        />
+            </StackPanel>
+        </Border>
 
     </Grid>
 </Window>
