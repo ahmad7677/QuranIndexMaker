@@ -228,6 +228,11 @@ namespace QuranIndexMaker.ViewModels
             indexCommand = new RelayCommand(IndexWords);
             quranDatabase = new QuranDatabase();
             AllItems.Add("All");
+
+            LanguageList = new List<string>
+            {
+                "1", "42", "59", "63", "79", "120"
+            };
         }
 
         private void IndexWords()
@@ -359,7 +364,7 @@ namespace QuranIndexMaker.ViewModels
 
             //if (surahs != null && surahs.Count == 0)
             {
-                await quranDatabase.quran.LoadAsync();
+                await quranDatabase.quran.Where(a=>a.DatabaseID==SelectedLanguage).LoadAsync();
                 await quranDatabase.SurahAyahLinks.LoadAsync();
                 await quranDatabase.SearchResults.Include(a => a.SurahAyahLinks).LoadAsync();
 
