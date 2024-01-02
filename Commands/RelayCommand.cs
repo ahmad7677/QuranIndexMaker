@@ -21,7 +21,7 @@ namespace QuranIndexMaker.Commands
             return true;
         }
 
-        public void Execute(object? parameter)
+        public void Execute(object parameter)
         {
             action.Invoke();
         }

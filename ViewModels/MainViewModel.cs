@@ -28,7 +28,7 @@ namespace QuranIndexMaker.ViewModels
         private List<string> indexKeys = new List<string>();
         int root = 21;
         string tag = string.Empty;
-        private ObservableCollection<SurahAyahLink> surahAyahLinks;
+        //private ObservableCollection<SurahAyahLink> surahAyahLinks;
         private ObservableCollection<SearchResult> searchResults;
         private ICollectionView colvs;
         private List<int> surahNumbers;
@@ -41,6 +41,7 @@ namespace QuranIndexMaker.ViewModels
         private List<string> allItems = new List<string>();
         private int selectedLanguage;
         private RelayCommand saveCommand;
+        private RelayCommand clearCommand;
         #endregion
         #region PROPS
 
@@ -124,16 +125,16 @@ namespace QuranIndexMaker.ViewModels
                 OnPropertyChanged();
             }
         }
-        public ObservableCollection<SurahAyahLink> SurahAyahLinks
-        {
-            get => surahAyahLinks;
-            set
-            {
-                surahAyahLinks = value;
-                CollectionSuraLinks = CollectionViewSource.GetDefaultView(SurahAyahLinks);
-                CollectionSuraLinks.Refresh();
-            }
-        }
+        //public ObservableCollection<SurahAyahLink> SurahAyahLinks
+        //{
+        //    get => surahAyahLinks;
+        //    set
+        //    {
+        //        surahAyahLinks = value;
+        //        CollectionSuraLinks = CollectionViewSource.GetDefaultView(SurahAyahLinks);
+        //        CollectionSuraLinks.Refresh();
+        //    }
+        //}
         public ObservableCollection<SearchResult> SearchResults
         {
             get { return searchResults; }
@@ -179,19 +180,19 @@ namespace QuranIndexMaker.ViewModels
             }
         }
         public ICollectionView CollectionSuraLinks { get; set; }
-        public SurahAyahLink SurahAyahLink
-        {
-            get => surahAyahLink;
-            set
-            {
-                surahAyahLink = value;
-                OnPropertyChanged();
-                if (surahAyahLink != null)
-                {
-                    SelectedAyahText = surahForDetails.Where(a => a.SuraID == surahAyahLink.SurahNo && a.VerseID == surahAyahLink.AyahNo).First();
-                }
-            }
-        }
+        //public SurahAyahLink SurahAyahLink
+        //{
+        //    get => surahAyahLink;
+        //    set
+        //    {
+        //        surahAyahLink = value;
+        //        OnPropertyChanged();
+        //        if (surahAyahLink != null)
+        //        {
+        //            SelectedAyahText = surahForDetails.Where(a => a.SuraID == surahAyahLink.SurahNo && a.VerseID == surahAyahLink.AyahNo).First();
+        //        }
+        //    }
+        //}
         public Quran SelectedAyahText
         {
             get => selectedAyahText;
@@ -205,6 +206,10 @@ namespace QuranIndexMaker.ViewModels
         #endregion
 
         #region COMMANDS
+        public RelayCommand ClearCommand
+        {
+            get => new RelayCommand(ClearChanges);
+        }
         public RelayCommand SaveCommand
         {
             get => saveCommand;
@@ -230,12 +235,14 @@ namespace QuranIndexMaker.ViewModels
         #region METHODS
         public MainViewModel()
         {
-            surahAyahLinks = new ObservableCollection<SurahAyahLink>();
+            //surahAyahLinks = new ObservableCollection<SurahAyahLink>();
             searchResults = new ObservableCollection<SearchResult>();
             startCommand = new RelayCommand(StartSearching);
             findRootsCommand = new RelayCommand(FindRoots);
             indexCommand = new RelayCommand(IndexWords);
             saveCommand = new RelayCommand(SaveChanges);
+            clearCommand = new RelayCommand(ClearChanges);
+            
             quranDatabase = new QuranDatabase();
             AllItems.Add("All");
 
@@ -245,10 +252,23 @@ namespace QuranIndexMaker.ViewModels
             };
         }
 
+        private void ClearChanges()
+        {
+            SearchResults.Clear();
+            //quranDatabase.RemoveRange(SearchResults);
+            quranDatabase.SaveChanges();
+        }
+
         private void SaveChanges()
         {
             try
             {
+                //for (int i = 0; i < SurahAyahLinks.Count; i++)
+                //{
+                //    SurahAyahLinks[i].SurahAyahLinkId = i + 94925;
+                //}
+                //quranDatabase.AddRange(SurahAyahLinks);
+                //quranDatabase.AddRange(SearchResults);
                 quranDatabase.SaveChanges();
             }
             catch (Exception ex)
@@ -288,7 +308,8 @@ namespace QuranIndexMaker.ViewModels
                                     SearchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
                                     {
                                         AyahNo = ayat.VerseID,
-                                        SurahNo = ayat.SuraID
+                                        SurahNo = ayat.SuraID,
+                                        SearchResultId = stag.SearchResultId
                                     });
                                 }
                             }
@@ -321,7 +342,8 @@ namespace QuranIndexMaker.ViewModels
                         }
                     }
                 }
-                break;
+                if(i==0)
+                    break;
             }
             if (root > 5)
             {
@@ -332,6 +354,7 @@ namespace QuranIndexMaker.ViewModels
             {
 
             }
+            SearchResults = searchResults;
             //await quranDatabase.SaveChangesAsync();
         }
 
@@ -346,20 +369,21 @@ namespace QuranIndexMaker.ViewModels
                 //{
                 //    SearchResults.Clear();
                 //}));
-                string regex = @"[(),.!?:;'`“”*0-9]";
+                string regex = @"[(),.!?:;'`""“”«»*0-9]";
                 string regex2 = @"([\s]){2,}";
                 string regex3 = @"/";
-                string replacement = string.Empty;
-                char[] splitters = new char[] { ' ', '/' };
+                string regex4 = @"—";
+                char[] splitters = new char[] { ' ', '-' };
                 await Task.Run(() =>
                 {
                 if (ayats != null)
                 {
                     for (int i = 0; i < ayats.Count; i++)
                     {
-                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex, replacement);
+                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex, " ");
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex2, " ");
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex3, " ");
+                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex4, " ");
 
                         //var ayahText = sozlar.Matches(ayats[i].AyahText);
                         string[] ayahText = ayats[i].AyahText.Split(splitters);
@@ -367,7 +391,7 @@ namespace QuranIndexMaker.ViewModels
                             for (int j = 0; j < ayahText.Length; j++)
                             {
 
-                                if (!indexKeys.Contains(ayahText[j]))
+                                if (!string.IsNullOrWhiteSpace(ayahText[j]) && !indexKeys.Contains(ayahText[j]) && ayahText[j].Length>2)
                                 {
                                     indexKeys.Add(ayahText[j]);
                                     Application.Current.Dispatcher.Invoke(new Action(() =>
@@ -376,8 +400,7 @@ namespace QuranIndexMaker.ViewModels
                                         {
                                             SearchTag = ayahText[j].ToLower(),
                                             DatabaseID = SelectedLanguage,
-                                            RemoveIt = 0,
-                                            SurahAyahLinks = new List<SurahAyahLink>()
+                                            RemoveIt = 0
                                         });
                                     }));
                                 }
@@ -401,13 +424,13 @@ namespace QuranIndexMaker.ViewModels
             //if (surahs != null && surahs.Count == 0)
             {
                 await quranDatabase.quran.Where(a => a.DatabaseID == SelectedLanguage).LoadAsync();
-                await quranDatabase.SurahAyahLinks.LoadAsync();
-                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).Include(a => a.SurahAyahLinks).LoadAsync();
+                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).Include(a=>a.SurahAyahLinks).LoadAsync();
+                
 
                 Ayats = quranDatabase.quran.Local.ToObservableCollection();
                 AyatInDetails = quranDatabase.quran.Local.ToList();
                 SearchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
-                SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
+                //SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
             }
         }
         #endregion

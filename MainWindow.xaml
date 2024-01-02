@@ -50,6 +50,10 @@
             <ColumnDefinition Width=".8*"/>
             <ColumnDefinition Width=".2*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
         <TabPanel>
             <TabControl>
 
@@ -107,13 +111,13 @@
                               AutoGenerateColumns="False" CanUserAddRows="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
                               >
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Word" Binding="{Binding SearchResult.SearchTag}"/>
+                                <DataGridTextColumn Header="Word" Binding="{Binding SearchTag}"/>
                                 <DataGridTextColumn Header="Sura No" Binding="{Binding SurahNo}"/>
                                 <DataGridTextColumn Header="Ayat No" Binding="{Binding AyahNo}"/>
-                                <DataGridTextColumn Header="Position" Binding="{Binding StartPosition}"/>
+                                
                             </DataGrid.Columns>
                         </DataGrid>
-                        <TextBox Text="{Binding SelectedAyahText.SurahText, UpdateSourceTrigger=LostFocus}" Width="400" Margin="10" TextWrapping="Wrap"/>
+                        <TextBox Text="{Binding SelectedAyahText.AyahText, UpdateSourceTrigger=LostFocus}" Width="400" Margin="10" TextWrapping="Wrap"/>
                     </StackPanel>
                 </TabItem>
                 <!--#endregion-->
@@ -139,9 +143,9 @@
 
         <Border Grid.Column="1">
             <StackPanel Orientation="Vertical">
-                <Button Content="Save"
-                        Command="{Binding SaveCommand}"
-                        />
+                <Button Content="Save" Command="{Binding SaveCommand}"/>
+                <Button Content="Clear Search Results" Command="{Binding ClearCommand}" CommandParameter="1"/>
+                <Button Content="Clear Links" Command="{Binding ClearCommand}" CommandParameter="2"/>
             </StackPanel>
         </Border>
 
