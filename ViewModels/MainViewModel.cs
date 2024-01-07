@@ -242,7 +242,7 @@ namespace QuranIndexMaker.ViewModels
             indexCommand = new RelayCommand(IndexWords);
             saveCommand = new RelayCommand(SaveChanges);
             clearCommand = new RelayCommand(ClearChanges);
-            
+
             quranDatabase = new QuranDatabase();
             AllItems.Add("All");
 
@@ -286,7 +286,7 @@ namespace QuranIndexMaker.ViewModels
             {
                 for (int i = 0; i < searchResults.Count; i++)
                 {
-                    //SurahAyahLinks.Clear();
+                    searchResults[i].SurahAyahLinks.Clear();
 
                     SearchResult stag = searchResults.ElementAt(i);
                     if (stag.SearchTag.Length > 2)
@@ -324,38 +324,64 @@ namespace QuranIndexMaker.ViewModels
 
         private async void FindRoots()
         {
+            string regex = @"[(),.!?:;'`-""“”«»*0-9]";
             for (int i = searchResults.Count - 1; i > 0; i--)
             {
                 tag = searchResults.ElementAt(i).SearchTag;
-                if (tag.Length == root)
+
+                if (searchResults.ElementAt(i).SearchTag.Contains('"') || searchResults.ElementAt(i).SearchTag.Contains('-'))
+                {
+                    searchResults.ElementAt(i).RemoveIt = 1;
+                    break;
+                }
+
+                if (tag.Length >= root)
                 {
                     //Search the word in searchResults
                     for (int j = searchResults.Count - 1; j > 0; j--)
                     {
                         if (i != j)
                         {
-                            if (searchResults.ElementAt(j).SearchTag.StartsWith(tag))
+                            if (searchResults.ElementAt(j).RemoveIt == 0 && searchResults.ElementAt(j).SearchTag.Length >= tag.Length)
                             {
-                                //mark derivatives for deletion
-                                searchResults.ElementAt(j).RemoveIt = 1;
+                                if (searchResults.ElementAt(j).SearchTag.StartsWith(tag) ||
+                                    searchResults.ElementAt(j).SearchTag.Length < 3
+                                    )
+                                {
+                                    //mark derivatives for deletion
+                                    searchResults.ElementAt(j).RemoveIt = 1;
+                                    searchResults.RemoveAt(j);
+                                }
                             }
                         }
                     }
                 }
-                if(i==0)
-                    break;
+                //for (int k = searchResults.Count - 1; k > 0; k--)
+                //{
+                //    if (searchResults[k].RemoveIt > 0)
+                //    {
+                //        searchResults.RemoveAt(k);
+                //    }
+                //}
             }
             if (root > 5)
             {
                 root--;
+
                 FindRoots();
+                return;
             }
             else
             {
 
             }
+
+            //var res = searchResults.Where(a=>a.SearchTag.Contains('"')).ToList();
+            //searchResults.Clear();
+            //quranDatabase.SearchResults.RemoveRange(searchResults);
+
             SearchResults = searchResults;
-            //await quranDatabase.SaveChangesAsync();
+            await quranDatabase.SaveChangesAsync();
         }
 
         private async void StartSearching()
@@ -376,22 +402,22 @@ namespace QuranIndexMaker.ViewModels
                 char[] splitters = new char[] { ' ', '-' };
                 await Task.Run(() =>
                 {
-                if (ayats != null)
-                {
-                    for (int i = 0; i < ayats.Count; i++)
+                    if (ayats != null)
                     {
+                        for (int i = 0; i < ayats.Count; i++)
+                        {
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex, " ");
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex2, " ");
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex3, " ");
                             ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex4, " ");
 
-                        //var ayahText = sozlar.Matches(ayats[i].AyahText);
-                        string[] ayahText = ayats[i].AyahText.Split(splitters);
-                                                        
+                            //var ayahText = sozlar.Matches(ayats[i].AyahText);
+                            string[] ayahText = ayats[i].AyahText.Split(splitters);
+
                             for (int j = 0; j < ayahText.Length; j++)
                             {
 
-                                if (!string.IsNullOrWhiteSpace(ayahText[j]) && !indexKeys.Contains(ayahText[j]) && ayahText[j].Length>2)
+                                if (!string.IsNullOrWhiteSpace(ayahText[j]) && !indexKeys.Contains(ayahText[j]) && ayahText[j].Length > 2)
                                 {
                                     indexKeys.Add(ayahText[j]);
                                     Application.Current.Dispatcher.Invoke(new Action(() =>
@@ -412,8 +438,8 @@ namespace QuranIndexMaker.ViewModels
                         }));
                     }
                 });
-                //await quranDatabase.SaveChangesAsync();
             }
+                await quranDatabase.SaveChangesAsync();
         }
 
         private async void LoadData()
@@ -424,8 +450,8 @@ namespace QuranIndexMaker.ViewModels
             //if (surahs != null && surahs.Count == 0)
             {
                 await quranDatabase.quran.Where(a => a.DatabaseID == SelectedLanguage).LoadAsync();
-                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).Include(a=>a.SurahAyahLinks).LoadAsync();
-                
+                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).Include(a => a.SurahAyahLinks).LoadAsync();
+
 
                 Ayats = quranDatabase.quran.Local.ToObservableCollection();
                 AyatInDetails = quranDatabase.quran.Local.ToList();
