@@ -391,14 +391,15 @@ namespace QuranIndexMaker.ViewModels
 
             if (result == MessageBoxResult.OK)
             {
-                //Application.Current.Dispatcher.Invoke(new Action(() =>
-                //{
-                //    SearchResults.Clear();
-                //}));
-                string regex = @"[(),.!?:;'`""“”«»*0-9]";
-                string regex2 = @"([\s]){2,}";
+                Application.Current.Dispatcher.Invoke(new Action(() =>
+                {
+                    SearchResults.Clear();
+                }));
+                string regex = @"[(),.!?:;'`“”«»*0-9]";
                 string regex3 = @"/";
                 string regex4 = @"—";
+                string regex5 = @"""";
+                string regex6 = @"([\s]){2,}";
                 char[] splitters = new char[] { ' ', '-' };
                 await Task.Run(() =>
                 {
@@ -406,27 +407,29 @@ namespace QuranIndexMaker.ViewModels
                     {
                         for (int i = 0; i < ayats.Count; i++)
                         {
-                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex, " ");
-                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex2, " ");
-                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex3, " ");
-                            ayats[i].AyahText = Regex.Replace(ayats[i].AyahText, regex4, " ");
+                            var ayatext = Regex.Replace(ayats[i].AyahText, regex, " ");
+                            ayatext = Regex.Replace(ayats[i].AyahText, regex3, " ");
+                            ayatext = Regex.Replace(ayats[i].AyahText, regex4, " ");
+                            ayatext = Regex.Replace(ayats[i].AyahText, regex5, " ");
+                            ayatext = Regex.Replace(ayats[i].AyahText, regex6, " ");
 
                             //var ayahText = sozlar.Matches(ayats[i].AyahText);
-                            string[] ayahText = ayats[i].AyahText.Split(splitters);
+                            string[] ayahWordArray = ayatext.Split(splitters);
 
-                            for (int j = 0; j < ayahText.Length; j++)
+                            for (int j = 0; j < ayahWordArray.Length; j++)
                             {
 
-                                if (!string.IsNullOrWhiteSpace(ayahText[j]) && !indexKeys.Contains(ayahText[j]) && ayahText[j].Length > 2)
+                                if (!string.IsNullOrWhiteSpace(ayahWordArray[j]) && !indexKeys.Contains(ayahWordArray[j]) && ayahWordArray[j].Length > 2)
                                 {
-                                    indexKeys.Add(ayahText[j]);
+                                    indexKeys.Add(ayahWordArray[j]);
                                     Application.Current.Dispatcher.Invoke(new Action(() =>
                                     {
                                         SearchResults.Add(new SearchResult
                                         {
-                                            SearchTag = ayahText[j].ToLower(),
+                                            SearchTag = ayahWordArray[j].ToLower(),
                                             DatabaseID = SelectedLanguage,
-                                            RemoveIt = 0
+                                            SurahNo = ayats[i].SuraID,
+                                            AyahNo = ayats[i].VerseID
                                         });
                                     }));
                                 }

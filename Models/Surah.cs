@@ -34,6 +34,8 @@ namespace QuranIndexMaker.Models
         public string SearchTag { get; set; } = string.Empty;
         public int RemoveIt { get; set; } = 0;
         public int DatabaseID { get; set; }
+        public int SurahNo { get; set; }
+        public int AyahNo { get; set; }
         
         public List<SurahAyahLink> SurahAyahLinks { get; set; } = new ();
     }
