@@ -24,7 +24,10 @@
         <CollectionViewSource x:Key="all" Source="{Binding AllItems, UpdateSourceTrigger=PropertyChanged, Mode=OneTime}"/>
         <CollectionViewSource x:Key="ayats" Source="{Binding AyahNumbers, UpdateSourceTrigger=PropertyChanged}"/>
         
-        <CollectionViewSource x:Key="searchtags" Source="{Binding SearchResults, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+        <CollectionViewSource x:Key="searchtags" Source="{Binding UniqueRootWords, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+        
+        <CollectionViewSource x:Key="searchresults" Source="{Binding SearchResults, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
+        
         <CollectionViewSource x:Key="references" Source="{Binding SurahAyahLinks, Source={StaticResource searchtags}, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
 
         <CollectionViewSource x:Key="mainCol" Source="{Binding Ayats, UpdateSourceTrigger=PropertyChanged, IsAsync=True}"/>
@@ -55,7 +58,7 @@
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
         <TabPanel>
-            <TabControl>
+            <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=OneWayToSource}">
 
                 <!--#region TAB 1 -->
                 <TabItem Header="Surahs">
@@ -96,12 +99,12 @@
                 <!--#endregion-->
 
                 <!--#region TAB TWO Edit Index-->
-                <TabItem Header="Edit Index" VerticalAlignment="Stretch">
+                <TabItem Header="Edit Index" VerticalAlignment="Top" Height="20">
                     <StackPanel Orientation="Horizontal">
-                        <DataGrid ItemsSource="{Binding Source={StaticResource searchtags}, UpdateSourceTrigger=PropertyChanged}"
+                        <DataGrid ItemsSource="{Binding CollectionSuraLinks}"
                                   AutoGenerateColumns="False" EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True">                            
                             <DataGrid.Columns>                                
-                                <DataGridTextColumn Header="Index" Binding="{Binding SearchTag}"/>
+                                <DataGridTextColumn Header="Index" Binding="{Binding RootWord}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <DataGrid 

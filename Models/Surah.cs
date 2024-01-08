@@ -15,15 +15,15 @@ namespace QuranIndexMaker.Models
         public int VerseID { get; set; }
         public string AyahText { get; set; } = string.Empty;
     }
-    //public class Suralar
-    //{
-    //    public int Id { get; set; }
-    //    public string SurahText { get; set; } = string.Empty;
-    //    public int SurahNo { get; set; }
-    //    public int AyahNo { get; set; }
-    //    public string Comment { get; set; } = string.Empty;
-    //}
-    
+    public class UniqueRootWord
+    {
+        public int UniqueRootWordId { get; set; }
+        public int DatabaseID { get; set; }
+        public string RootWord { get; set; } = string.Empty;
+
+        public List<SearchResult> SearchResults { get; set; } = new List<SearchResult>();
+    }
+
     public class SearchResult
     {
         [Key]
@@ -31,13 +31,12 @@ namespace QuranIndexMaker.Models
         /// <summary>
         /// a word or a phrase
         /// </summary>
-        public string SearchTag { get; set; } = string.Empty;
-        public int RemoveIt { get; set; } = 0;
+        //public string SearchTag { get; set; } = string.Empty;
+        //public int RemoveIt { get; set; } = 0;
+        public int UniqueRootWordId { get; set; }
         public int DatabaseID { get; set; }
-        public int SurahNo { get; set; }
-        public int AyahNo { get; set; }
-        
-        public List<SurahAyahLink> SurahAyahLinks { get; set; } = new ();
+        public int? SurahNo { get; set; }
+        public int? AyahNo { get; set; }        
     }
 
     

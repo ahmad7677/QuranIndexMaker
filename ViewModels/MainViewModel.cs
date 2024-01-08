@@ -56,6 +56,16 @@ namespace QuranIndexMaker.ViewModels
                 LoadData();
             }
         }
+        public int SelectedTabIndex
+        {
+            get => selectedTabIndex;
+            set
+            {
+                selectedTabIndex = value;
+                if(CollectionSuraLinks!=null)
+                    CollectionSuraLinks.Refresh();
+            }
+        }
         public int SelectedSurahNumber
         {
             get
@@ -125,16 +135,17 @@ namespace QuranIndexMaker.ViewModels
                 OnPropertyChanged();
             }
         }
-        //public ObservableCollection<SurahAyahLink> SurahAyahLinks
-        //{
-        //    get => surahAyahLinks;
-        //    set
-        //    {
-        //        surahAyahLinks = value;
-        //        CollectionSuraLinks = CollectionViewSource.GetDefaultView(SurahAyahLinks);
-        //        CollectionSuraLinks.Refresh();
-        //    }
-        //}
+        public ObservableCollection<UniqueRootWord> UniqueRootWords
+        {
+            get => uniqueRootWords;
+            set
+            {
+                uniqueRootWords = value;
+                CollectionSuraLinks = CollectionViewSource.GetDefaultView(UniqueRootWords);
+                if(CollectionSuraLinks!=null)
+                    CollectionSuraLinks.Refresh();
+            }
+        }
         public ObservableCollection<SearchResult> SearchResults
         {
             get { return searchResults; }
@@ -179,20 +190,24 @@ namespace QuranIndexMaker.ViewModels
                 CollectionVS.Refresh();
             }
         }
+
+        private ObservableCollection<UniqueRootWord> uniqueRootWords;
+        private int selectedTabIndex;
+
         public ICollectionView CollectionSuraLinks { get; set; }
-        //public SurahAyahLink SurahAyahLink
-        //{
-        //    get => surahAyahLink;
-        //    set
-        //    {
-        //        surahAyahLink = value;
-        //        OnPropertyChanged();
-        //        if (surahAyahLink != null)
-        //        {
-        //            SelectedAyahText = surahForDetails.Where(a => a.SuraID == surahAyahLink.SurahNo && a.VerseID == surahAyahLink.AyahNo).First();
-        //        }
-        //    }
-        //}
+        public SurahAyahLink SurahAyahLink
+        {
+            get => surahAyahLink;
+            set
+            {
+                surahAyahLink = value;
+                OnPropertyChanged();
+                if (surahAyahLink != null)
+                {
+                    SelectedAyahText = surahForDetails.Where(a => a.SuraID == surahAyahLink.SurahNo && a.VerseID == surahAyahLink.AyahNo).First();
+                }
+            }
+        }
         public Quran SelectedAyahText
         {
             get => selectedAyahText;
@@ -237,7 +252,7 @@ namespace QuranIndexMaker.ViewModels
         {
             //surahAyahLinks = new ObservableCollection<SurahAyahLink>();
             searchResults = new ObservableCollection<SearchResult>();
-            startCommand = new RelayCommand(StartSearching);
+            startCommand = new RelayCommand(IdentifyAndCollectRoots);
             findRootsCommand = new RelayCommand(FindRoots);
             indexCommand = new RelayCommand(IndexWords);
             saveCommand = new RelayCommand(SaveChanges);
@@ -248,7 +263,7 @@ namespace QuranIndexMaker.ViewModels
 
             LanguageList = new List<string>
             {
-                "1", "42", "59", "63", "79", "120"
+                "1", "42", "59", "63", "79"
             };
         }
 
@@ -282,87 +297,116 @@ namespace QuranIndexMaker.ViewModels
             string message = "This will completely replace the current list";
             MessageBoxResult result = MessageBox.Show(message, "Are you sure?", MessageBoxButton.OKCancel);
 
+
             if (result == MessageBoxResult.OK)
             {
-                for (int i = 0; i < searchResults.Count; i++)
+                SearchResults.Clear();
+                string regex2 = @"(\([\d:-]*\))";
+                string regex = @"[(),.!?:;'`“”«»*0-9]";
+                string regex3 = @"/";
+                string regex4 = @"—";
+                string regex5 = @"""";
+                string regex6 = @"([\s]){2,}";
+                char[] splitters = new char[] { ' ', '-' };
+
+                for (int i = 0; i < ayats.Count; i++)
                 {
-                    searchResults[i].SurahAyahLinks.Clear();
+                    var ayatext = ayats[i].AyahText;
+                    ayatext = Regex.Replace(ayatext, regex2, " ");
+                    ayatext = Regex.Replace(ayatext, regex, " ");
+                    ayatext = Regex.Replace(ayatext, regex3, " ");
+                    ayatext = Regex.Replace(ayatext, regex4, " ");
+                    ayatext = Regex.Replace(ayatext, regex5, " ");
+                    ayatext = Regex.Replace(ayatext, regex6, " ");
 
-                    SearchResult stag = searchResults.ElementAt(i);
-                    if (stag.SearchTag.Length > 2)
+                    //var ayahText = sozlar.Matches(ayats[i].AyahText);
+                    string[] ayahWordArray = ayatext.Split(splitters);//All words in one ayah
+                    
+                    for (int j = 0; j < ayahWordArray.Length; j++)
                     {
-                        foreach (var ayat in Ayats)
-                        {
-                            //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop".
-                            //"top" in "stop" must be avoided as it is a part of another word
-                            string currenttext = ayat.AyahText.ToLower();
 
-                            if (currenttext.Contains(" " + stag.SearchTag) || //words found within text
-                                currenttext.Contains(stag.SearchTag) && //words found at the start
-                                currenttext.IndexOf(stag.SearchTag) == 0)
+                        foreach (var word in uniqueRootWords)
+                        {
+                            if (ayahWordArray[j] == word.RootWord)
                             {
-                                if (!stag.SurahAyahLinks.Where(s => s.AyahNo == ayat.VerseID).Any() &&
-                                    !stag.SurahAyahLinks.Where(s => s.SurahNo == ayat.SuraID).Any())
-                                {
-                                    //int position = ayat.AyahText.IndexOf(stag.SearchTag);
-                                    SearchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
+                                word.SearchResults.Add(
+                                    new SearchResult
                                     {
-                                        AyahNo = ayat.VerseID,
-                                        SurahNo = ayat.SuraID,
-                                        SearchResultId = stag.SearchResultId
-                                    });
-                                }
+                                        AyahNo = ayats[i].VerseID,
+                                        SurahNo = ayats[i].SuraID
+                                    }
+                                    );
                             }
                         }
+
+
+
+
                     }
+
+
+
+
+                    //if (stag.SearchTag.Length > 2)
+                    //{
+                    //    foreach (var ayat in Ayats)
+                    //    {
+                    //        //The condition below allows identifying words and avoid any trailing or enclosed matches like "for" in "Before" or "top" in "stop".
+                    //        //"top" in "stop" must be avoided as it is a part of another word
+                    //        string currenttext = ayat.AyahText.ToLower();
+
+                    //        if (currenttext.Contains(" " + stag.SearchTag) || //words found within text
+                    //            currenttext.Contains(stag.SearchTag) && //words found at the start
+                    //            currenttext.IndexOf(stag.SearchTag) == 0)
+                    //        {
+                    //            if (!stag.SurahAyahLinks.Where(s => s.AyahNo == ayat.VerseID).Any() &&
+                    //                !stag.SurahAyahLinks.Where(s => s.SurahNo == ayat.SuraID).Any())
+                    //            {
+                    //                //int position = ayat.AyahText.IndexOf(stag.SearchTag);
+                    //                SearchResults.ElementAt(i).SurahAyahLinks.Add(new SurahAyahLink
+                    //                {
+                    //                    AyahNo = ayat.VerseID,
+                    //                    SurahNo = ayat.SuraID,
+                    //                    SearchResultId = stag.SearchResultId
+                    //                });
+                    //            }
+                    //        }
+                    //    }
+                    //}
                 }
 
             }
+            quranDatabase.SaveChangesAsync();
         }
 
 
 
         private async void FindRoots()
         {
-            string regex = @"[(),.!?:;'`-""“”«»*0-9]";
-            for (int i = searchResults.Count - 1; i > 0; i--)
+            for (int i = uniqueRootWords.Count - 1; i > 0; i--)
             {
-                tag = searchResults.ElementAt(i).SearchTag;
-
-                if (searchResults.ElementAt(i).SearchTag.Contains('"') || searchResults.ElementAt(i).SearchTag.Contains('-'))
-                {
-                    searchResults.ElementAt(i).RemoveIt = 1;
-                    break;
-                }
+                tag = uniqueRootWords.ElementAt(i).RootWord.Trim();
 
                 if (tag.Length >= root)
                 {
                     //Search the word in searchResults
-                    for (int j = searchResults.Count - 1; j > 0; j--)
+                    for (int j = uniqueRootWords.Count - 1; j > 0; j--)
                     {
                         if (i != j)
                         {
-                            if (searchResults.ElementAt(j).RemoveIt == 0 && searchResults.ElementAt(j).SearchTag.Length >= tag.Length)
+                            if (uniqueRootWords.ElementAt(j).RootWord.Length >= tag.Length)
                             {
-                                if (searchResults.ElementAt(j).SearchTag.StartsWith(tag) ||
-                                    searchResults.ElementAt(j).SearchTag.Length < 3
-                                    )
+                                if (uniqueRootWords.ElementAt(j).RootWord.StartsWith(tag))
                                 {
                                     //mark derivatives for deletion
-                                    searchResults.ElementAt(j).RemoveIt = 1;
-                                    searchResults.RemoveAt(j);
+                                    uniqueRootWords.RemoveAt(j);
+                                    
                                 }
                             }
                         }
                     }
                 }
-                //for (int k = searchResults.Count - 1; k > 0; k--)
-                //{
-                //    if (searchResults[k].RemoveIt > 0)
-                //    {
-                //        searchResults.RemoveAt(k);
-                //    }
-                //}
+
             }
             if (root > 5)
             {
@@ -375,16 +419,25 @@ namespace QuranIndexMaker.ViewModels
             {
 
             }
-
+            for (int k = uniqueRootWords.Count - 1; k > 0; k--)
+            {
+                for (int l = uniqueRootWords.Count - 1; l > 0; l--)
+                {
+                    if (l > k && uniqueRootWords[k].RootWord.Trim() == uniqueRootWords[l].RootWord.Trim())
+                    {
+                        uniqueRootWords.RemoveAt(k);
+                    }
+                }
+            }
             //var res = searchResults.Where(a=>a.SearchTag.Contains('"')).ToList();
             //searchResults.Clear();
             //quranDatabase.SearchResults.RemoveRange(searchResults);
 
-            SearchResults = searchResults;
+            UniqueRootWords = uniqueRootWords;
             await quranDatabase.SaveChangesAsync();
         }
 
-        private async void StartSearching()
+        private async void IdentifyAndCollectRoots()
         {
             string message = "This will completely replace the current list";
             MessageBoxResult result = MessageBox.Show(message, "Are you sure?", MessageBoxButton.OKCancel);
@@ -393,8 +446,9 @@ namespace QuranIndexMaker.ViewModels
             {
                 Application.Current.Dispatcher.Invoke(new Action(() =>
                 {
-                    SearchResults.Clear();
+                    UniqueRootWords.Clear();
                 }));
+                string regex2 = @"(\([\d:-]*\))";
                 string regex = @"[(),.!?:;'`“”«»*0-9]";
                 string regex3 = @"/";
                 string regex4 = @"—";
@@ -407,29 +461,44 @@ namespace QuranIndexMaker.ViewModels
                     {
                         for (int i = 0; i < ayats.Count; i++)
                         {
-                            var ayatext = Regex.Replace(ayats[i].AyahText, regex, " ");
-                            ayatext = Regex.Replace(ayats[i].AyahText, regex3, " ");
-                            ayatext = Regex.Replace(ayats[i].AyahText, regex4, " ");
-                            ayatext = Regex.Replace(ayats[i].AyahText, regex5, " ");
-                            ayatext = Regex.Replace(ayats[i].AyahText, regex6, " ");
+                            var ayatext = ayats[i].AyahText;
+                            ayatext = Regex.Replace(ayatext, regex2, " ");
+                            ayatext = Regex.Replace(ayatext, regex, " ");
+                            ayatext = Regex.Replace(ayatext, regex3, " ");
+                            ayatext = Regex.Replace(ayatext, regex4, " ");
+                            ayatext = Regex.Replace(ayatext, regex5, " ");
+                            ayatext = Regex.Replace(ayatext, regex6, " ");
 
                             //var ayahText = sozlar.Matches(ayats[i].AyahText);
-                            string[] ayahWordArray = ayatext.Split(splitters);
+                            string[] ayahWordArray = ayatext.Split(splitters);//All words in one ayah
 
                             for (int j = 0; j < ayahWordArray.Length; j++)
                             {
 
-                                if (!string.IsNullOrWhiteSpace(ayahWordArray[j]) && !indexKeys.Contains(ayahWordArray[j]) && ayahWordArray[j].Length > 2)
+                                if (!string.IsNullOrWhiteSpace(ayahWordArray[j]))
                                 {
-                                    indexKeys.Add(ayahWordArray[j]);
+
+                                    //indexKeys.Add(ayahWordArray[j]); !indexKeys.Contains(ayahWordArray[j]) &&
                                     Application.Current.Dispatcher.Invoke(new Action(() =>
                                     {
-                                        SearchResults.Add(new SearchResult
+                                        string addword = ayahWordArray[j].Trim().ToLower();
+
+                                        var uniqueword = uniqueRootWords.Where(a => a.RootWord == addword).FirstOrDefault();
+
+                                        if (uniqueword == null)
                                         {
-                                            SearchTag = ayahWordArray[j].ToLower(),
-                                            DatabaseID = SelectedLanguage,
+                                            uniqueword = new();
+                                            uniqueword.RootWord = addword;
+                                            uniqueword.DatabaseID = SelectedLanguage;
+
+
+                                            uniqueRootWords.Add(uniqueword);
+                                        }
+                                        uniqueword.SearchResults.Add(new SearchResult
+                                        {
+                                            AyahNo = ayats[i].VerseID,
                                             SurahNo = ayats[i].SuraID,
-                                            AyahNo = ayats[i].VerseID
+                                            DatabaseID = SelectedLanguage
                                         });
                                     }));
                                 }
@@ -437,12 +506,13 @@ namespace QuranIndexMaker.ViewModels
                         }
                         Application.Current.Dispatcher.Invoke(new Action(() =>
                         {
-                            ProgressMessage = "Search result:\n" + searchResults.Count;
+                            ProgressMessage = "Search result:\n" + uniqueRootWords.Count;
                         }));
                     }
                 });
             }
-                await quranDatabase.SaveChangesAsync();
+            UniqueRootWords = uniqueRootWords;
+            await quranDatabase.SaveChangesAsync();
         }
 
         private async void LoadData()
@@ -453,13 +523,14 @@ namespace QuranIndexMaker.ViewModels
             //if (surahs != null && surahs.Count == 0)
             {
                 await quranDatabase.quran.Where(a => a.DatabaseID == SelectedLanguage).LoadAsync();
-                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).Include(a => a.SurahAyahLinks).LoadAsync();
-
+                await quranDatabase.SearchResults.Where(a => a.DatabaseID == SelectedLanguage).LoadAsync();
+                await quranDatabase.UniqueRootWords.Where(a => a.DatabaseID == SelectedLanguage).LoadAsync();
 
                 Ayats = quranDatabase.quran.Local.ToObservableCollection();
                 AyatInDetails = quranDatabase.quran.Local.ToList();
                 SearchResults = quranDatabase.SearchResults.Local.ToObservableCollection();
                 //SurahAyahLinks = quranDatabase.SurahAyahLinks.Local.ToObservableCollection();
+                UniqueRootWords = quranDatabase.UniqueRootWords.Local.ToObservableCollection();
             }
         }
         #endregion

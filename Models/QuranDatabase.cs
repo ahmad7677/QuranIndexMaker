@@ -13,6 +13,7 @@ namespace QuranIndexMaker.Models
         public DbSet<Quran> quran { get; set; }
         public DbSet<SurahAyahLink> SurahAyahLinks { get; set; }
         public DbSet<SearchResult> SearchResults { get; set; }
+        public DbSet<UniqueRootWord> UniqueRootWords { get; set; }
 
         public QuranDatabase()
         {
